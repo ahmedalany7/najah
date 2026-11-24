@@ -27,6 +27,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{background:var(--night);color:var(--paper)}
 body{margin:0;font-family:var(--f-body);font-size:16px;line-height:1.7;min-height:100vh;overflow-x:hidden}
 #sky,#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
@@ -262,6 +263,8 @@ let stored=null;
 try{stored=JSON.parse(localStorage.getItem(KEY)||"null");}catch(e){}
 if(stored&&Array.isArray(stored.exams)){state.exams=stored.exams;}
 else{state.exams=sampleExams();}
+// ask the browser to keep this site's data and never clear it on its own
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{});}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} refreshBackup();}
 
 /* ---------- formatting ---------- */
