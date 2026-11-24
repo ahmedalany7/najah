@@ -32,7 +32,7 @@ body{margin:0;font-family:var(--f-body);font-size:16px;line-height:1.7;min-heigh
 #sky,#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 #sky{z-index:0}
 #confetti{z-index:50}
-.wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;
+.wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-block:28px 60px;display:flex;flex-direction:column;gap:28px}
@@ -130,18 +130,22 @@ footer{color:var(--muted);font-size:.85rem;text-align:center}
 
 .heart{position:fixed;z-index:60;pointer-events:none;color:var(--rose);font-size:18px;will-change:transform,opacity;animation:float 1.6s ease-out forwards}
 @keyframes float{to{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(.4);opacity:0}}
-.toast{position:fixed;z-index:70;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(140%);
+.toast{position:fixed;z-index:70;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(calc(100% + 60px));visibility:hidden;
   background:var(--paper);color:var(--night);font-weight:700;border-radius:14px;padding:12px 20px;max-width:calc(100% - 32px);text-align:center;transition:transform .4s cubic-bezier(.2,.9,.3,1.2);box-shadow:0 12px 40px rgba(0,0,0,.5)}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
 
-@media (max-width:640px){
+/* Mobile-first: one phone-width column at every screen size */
+.wrap{gap:22px;padding-block:20px 48px}
+.hero{padding:22px 16px;border-radius:20px}
+.list{grid-template-columns:1fr}
+.btn{min-height:44px}
+.btn.small{min-height:36px}
   form.add{grid-template-columns:1fr 1fr}
   form.add .subj{grid-column:1/-1}
   form.add .wide,form.add .note{grid-column:1/-1}
   .clock{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:8px}
   .unit{min-width:0;padding:12px 4px 8px}
   .unit .num{font-size:clamp(1.7rem,9vw,2.4rem)}
-}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
@@ -215,14 +219,8 @@ footer{color:var(--muted);font-size:.85rem;text-align:center}
   <p class="letter" id="letter"></p>
 
   <details class="panel">
-    <summary>تخصيص ونسخة احتياطية</summary>
+    <summary>نسخة احتياطية للجدول</summary>
     <div class="settings">
-      <label class="f">اسمها (يظهر في التحية)
-        <input id="sName" type="text" maxlength="30" placeholder="حبيبتي">
-      </label>
-      <label class="f">رسالتك لها (تظهر أسفل الجدول)
-        <input id="sMsg" type="text" maxlength="160">
-      </label>
       <label class="f">نسخة احتياطية للجدول: انسخي النص لنقل الجدول إلى جهاز آخر، أو الصقي نصًا محفوظًا ثم اضغطي «استيراد»
         <textarea id="sBackup" spellcheck="false"></textarea>
       </label>
@@ -258,10 +256,11 @@ function sampleExams(){
     {id:"ex3",subject:"اللغة الإنجليزية",ts:at(13,8,30),place:"",note:"شفهي + تحريري",created:c,sample:true}
   ];
 }
-let state={exams:[],name:"",msg:DEFAULT_MSG};
+const HER_NAME="حبيبتي";
+let state={exams:[]};
 let stored=null;
 try{stored=JSON.parse(localStorage.getItem(KEY)||"null");}catch(e){}
-if(stored&&Array.isArray(stored.exams)){state=Object.assign(state,stored);}
+if(stored&&Array.isArray(stored.exams)){state.exams=stored.exams;}
 else{state.exams=sampleExams();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} refreshBackup();}
 
@@ -328,9 +327,9 @@ function nextPhrase(){pIdx=(pIdx+1)%PHRASES.length;return PHRASES[pIdx];}
 function renderGreeting(){
   const h=new Date().getHours();
   const part=h<5?"سهرة سعيدة":h<12?"صباح الخير":h<17?"نهارك سعيد":"مساء الخير";
-  $("greet").textContent=part+" يا "+(state.name.trim()||"حبيبتي");
+  $("greet").textContent=part+" يا "+HER_NAME;
   const L=$("letter");L.textContent="";
-  L.append(state.msg.trim()||DEFAULT_MSG," ");
+  L.append(DEFAULT_MSG," ");
   const s=document.createElement("span");s.textContent="♥";L.append(s);
 }
 
@@ -493,12 +492,9 @@ $("form").addEventListener("submit",ev=>{
 $("clearSamples").onclick=()=>{state.exams=state.exams.filter(e=>!e.sample);save();lastNextId=null;renderAll();toast("حُذفت الأمثلة. الجدول لكِ الآن");};
 
 /* ---------- settings ---------- */
-$("sName").value=state.name;$("sMsg").value=state.msg;
-$("sName").addEventListener("input",()=>{state.name=$("sName").value;save();renderGreeting();});
-$("sMsg").addEventListener("input",()=>{state.msg=$("sMsg").value;save();renderGreeting();});
 function refreshBackup(){
   const exams=state.exams.filter(e=>!e.sample);
-  $("sBackup").value=JSON.stringify({exams,name:state.name,msg:state.msg});
+  $("sBackup").value=JSON.stringify({exams});
 }
 $("bCopy").onclick=()=>{
   const t=$("sBackup");refreshBackup();
@@ -513,9 +509,6 @@ $("bImport").onclick=()=>{
     state.exams=d.exams.filter(e=>e&&typeof e.subject==="string"&&typeof e.ts==="number").map(e=>({
       id:String(e.id||("e"+Math.random().toString(36).slice(2))),subject:e.subject.slice(0,60),ts:e.ts,
       place:String(e.place||"").slice(0,60),note:String(e.note||"").slice(0,80),created:Number(e.created)||Date.now()}));
-    if(typeof d.name==="string")state.name=d.name.slice(0,30);
-    if(typeof d.msg==="string")state.msg=d.msg.slice(0,160);
-    $("sName").value=state.name;$("sMsg").value=state.msg;
     err.hidden=true;save();lastNextId=null;renderAll();toast("تم استيراد الجدول ✓");
   }catch(e){err.textContent="النص غير صالح. الصقي النص المنسوخ كما هو.";err.hidden=false;}
 };
